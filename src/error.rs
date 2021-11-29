@@ -1,9 +1,7 @@
 use std::error;
 use std::fmt::{self, Display, Formatter};
 
-use ffi::MH_STATUS;
-
-
+use crate::minhook::MH_STATUS;
 
 /// The error type for all hooking operations.
 ///
@@ -40,7 +38,7 @@ pub enum Error {
     /// The specified module name is invalid.
     InvalidModuleName,
     /// The specified function name is invalid.
-    InvalidFunctionName
+    InvalidFunctionName,
 }
 
 impl Error {
@@ -82,33 +80,42 @@ impl error::Error for Error {
             Error::FunctionNotFound => "function not found",
 
             Error::InvalidModuleName => "invalid module name",
-            Error::InvalidFunctionName => "invalid function name"
+            Error::InvalidFunctionName => "invalid function name",
         }
     }
 }
 
 impl Display for Error {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
-         write!(formatter, "{}", match *self {
-            Error::AlreadyInitialized => "MinHook is already initialized",
-            Error::NotInitialized => "MinHook is not initialized yet, or already uninitialized",
-            Error::AlreadyCreated => "The hook for the specified target function is already \
+        write!(
+            formatter,
+            "{}",
+            match *self {
+                Error::AlreadyInitialized => "MinHook is already initialized",
+                Error::NotInitialized => "MinHook is not initialized yet, or already uninitialized",
+                Error::AlreadyCreated =>
+                    "The hook for the specified target function is already \
                                       created",
-            Error::NotCreated => "The hook for the specified target function is not created yet",
-            Error::AlreadyEnabled => "The hook for the specified target function is already \
+                Error::NotCreated =>
+                    "The hook for the specified target function is not created yet",
+                Error::AlreadyEnabled =>
+                    "The hook for the specified target function is already \
                                       enabled",
-            Error::Disabled => "The hook for the specified target function is not enabled yet, or \
+                Error::Disabled =>
+                    "The hook for the specified target function is not enabled yet, or \
                                 already disabled",
-            Error::NotExecutable => "The specified pointer is invalid; it points the address of \
+                Error::NotExecutable =>
+                    "The specified pointer is invalid; it points the address of \
                                      non-allocated and/or non-executable region",
-            Error::UnsupportedFunction => "The specified target function cannot be hooked",
-            Error::MemoryAlloc => "Failed to allocate memory",
-            Error::MemoryProtect => "Failed to change the memory protection",
-            Error::ModuleNotFound => "The specified module is not loaded",
-            Error::FunctionNotFound => "The specified function is not found",
+                Error::UnsupportedFunction => "The specified target function cannot be hooked",
+                Error::MemoryAlloc => "Failed to allocate memory",
+                Error::MemoryProtect => "Failed to change the memory protection",
+                Error::ModuleNotFound => "The specified module is not loaded",
+                Error::FunctionNotFound => "The specified function is not found",
 
-            Error::InvalidModuleName => "The specified module name is invalid",
-            Error::InvalidFunctionName => "The specified function name is invalid"
-        })
+                Error::InvalidModuleName => "The specified module name is invalid",
+                Error::InvalidFunctionName => "The specified function name is invalid",
+            }
+        )
     }
 }

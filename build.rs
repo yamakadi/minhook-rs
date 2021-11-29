@@ -1,36 +1,45 @@
-extern crate gcc;
-
 use std::env;
 use std::path::Path;
 
-use gcc::Config;
-
 fn main() {
-    let root_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let target = env::var("TARGET").unwrap();
-
-    let parts = target.splitn(4, '-').collect::<Vec<_>>();
-    let arch = parts[0];
-    let sys  = parts[2];
-
-    if sys != "windows" {
-        panic!("Platform '{}' not supported.", sys);
+    if let Ok(_) = env::var("DOCS_RS") {
+        // Docs don't need to build the library.
+        return;
     }
 
-    let hde = match arch {
-        "i686"   => "HDE/hde32.c",
-        "x86_64" => "HDE/hde64.c",
-        _        => panic!("Architecture '{}' not supported.", arch)
+    // if env::var("CARGO_CFG_WINDOWS").is_err() {
+    //     panic!("only Windows is supported");
+    // }
+
+    let hde = match env::var("CARGO_CFG_TARGET_ARCH").unwrap().as_str() {
+        "x86" => "hde/hde32.c",
+        "x86_64" => "hde/hde64.c",
+        _ => panic!("only x86 and x86_64 architectures are supported"),
     };
 
-    let src_dir = Path::new(&root_dir).join("src/minhook/src");
+    println!("cargo:rerun-if-changed=minhook/include");
+    println!("cargo:rerun-if-changed=minhook/include/MinHook.h");
+    println!("cargo:rerun-if-changed=minhook/src");
+    println!("cargo:rerun-if-changed=minhook/src/buffer.c");
+    println!("cargo:rerun-if-changed=minhook/src/buffer.h");
+    println!("cargo:rerun-if-changed=minhook/src/hde");
+    println!("cargo:rerun-if-changed=minhook/src/hde/hde32.c");
+    println!("cargo:rerun-if-changed=minhook/src/hde/hde32.h");
+    println!("cargo:rerun-if-changed=minhook/src/hde/hde64.c");
+    println!("cargo:rerun-if-changed=minhook/src/hde/hde64.h");
+    println!("cargo:rerun-if-changed=minhook/src/hde/pstdint.h");
+    println!("cargo:rerun-if-changed=minhook/src/hde/table32.h");
+    println!("cargo:rerun-if-changed=minhook/src/hde/table64.h");
+    println!("cargo:rerun-if-changed=minhook/src/hook.c");
+    println!("cargo:rerun-if-changed=minhook/src/trampoline.c");
+    println!("cargo:rerun-if-changed=minhook/src/trampoline.h");
 
-    Config::new()
-           .file(src_dir.join("buffer.c"))
-           .file(src_dir.join("hook.c"))
-           .file(src_dir.join("trampoline.c"))
-           .file(src_dir.join(hde))
-           .compile("libminhook.a");
+    let src_dir = Path::new("src/minhook/src");
 
-    println!("cargo:rerun-if-changed=src/minhook/src/");
+    cc::Build::new()
+        .file(src_dir.join("buffer.c"))
+        .file(src_dir.join("hook.c"))
+        .file(src_dir.join("trampoline.c"))
+        .file(src_dir.join(hde))
+        .compile("MinHook");
 }

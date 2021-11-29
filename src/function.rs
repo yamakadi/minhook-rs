@@ -4,15 +4,14 @@
 //! by users of this library.
 
 use std::{fmt, mem};
-use std::os::raw::c_void;
 
 use super::Hook;
-
-
+use winapi::ctypes::c_void;
+use winapi::shared::minwindef::LPVOID;
 
 /// An untyped function pointer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct FnPointer(*mut c_void);
+pub struct FnPointer(LPVOID);
 
 impl FnPointer {
     /// Creates a function pointer from a raw pointer.
@@ -21,10 +20,14 @@ impl FnPointer {
     ///
     /// This function is unsafe because it can not check if the argument points to valid
     /// executable memory.
-    pub unsafe fn from_raw(ptr: *mut c_void) -> FnPointer { FnPointer(ptr) }
+    pub unsafe fn from_raw(ptr: LPVOID) -> FnPointer {
+        FnPointer(ptr)
+    }
 
     /// Returns function pointer as a raw pointer.
-    pub fn to_raw(&self) -> *mut c_void { self.0 }
+    pub fn to_raw(&self) -> *mut c_void {
+        self.0
+    }
 }
 
 impl fmt::Pointer for FnPointer {
@@ -32,8 +35,6 @@ impl fmt::Pointer for FnPointer {
         write!(fmt, "{:p}", self.0)
     }
 }
-
-
 
 /// Trait representing a function that can be used as a target function or detour function for
 /// hooking.
@@ -67,12 +68,8 @@ pub unsafe trait Function: Sized + Copy + Sync + 'static {
     fn to_unsafe(&self) -> Self::Unsafe;
 }
 
-
-
 /// Trait representing an unsafe function.
 pub unsafe trait UnsafeFunction: Function {}
-
-
 
 /// Marker trait indicating that the function `Self` can be hooked by the given function `D`.
 #[rustc_on_unimplemented = "The type `{D}` is not a suitable detour function type for a \
@@ -80,8 +77,6 @@ pub unsafe trait UnsafeFunction: Function {}
 pub unsafe trait HookableWith<D: Function>: Function {}
 
 unsafe impl<T: Function> HookableWith<T> for T {}
-
-
 
 #[cfg(not(feature = "increased_arity"))]
 impl_hookable! {

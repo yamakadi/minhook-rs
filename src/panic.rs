@@ -5,22 +5,20 @@ use std::any::Any;
 use std::io::{self, Write};
 use std::panic::{self, AssertUnwindSafe};
 
-use sync::StaticRwCell;
-
-
+use crate::sync::StaticRwCell;
 
 /// A struct providing information about a panic that happened inside of a guarded detour function.
 #[derive(Clone, Copy, Debug)]
 pub struct DetourPanicInfo<'a> {
-    payload: &'a (Any + Send),
-    detour: &'a str
+    payload: &'a (dyn Any + Send),
+    detour: &'a str,
 }
 
 impl<'a> DetourPanicInfo<'a> {
     /// Returns the payload associated with the panic.
     ///
     /// This will commonly, but not always, be a `&'static str` or `String`.
-    pub fn payload(&self) -> &(Any + Send) {
+    pub fn payload(&self) -> &(dyn Any + Send) {
         self.payload
     }
 
@@ -31,9 +29,8 @@ impl<'a> DetourPanicInfo<'a> {
     }
 }
 
-
-
-static HANDLER: StaticRwCell<Option<Box<Fn(&DetourPanicInfo) + Sync + Send>>> = StaticRwCell::new(None);
+static HANDLER: StaticRwCell<Option<Box<dyn Fn(&DetourPanicInfo) + Sync + Send>>> =
+    StaticRwCell::new(None);
 
 /// Registers a custom detour panic handler, replacing any that was previously
 /// registered.
@@ -51,26 +48,28 @@ static HANDLER: StaticRwCell<Option<Box<Fn(&DetourPanicInfo) + Sync + Send>>> = 
 ///
 /// The panic handler is a global resource.
 pub fn set_handler<F>(handler: F)
-where F: Fn(&DetourPanicInfo) + Sync + Send + 'static {
+where
+    F: Fn(&DetourPanicInfo) + Sync + Send + 'static,
+{
     HANDLER.set(Some(Box::new(handler)));
 }
 
 /// Unregisters the current panic handler, returning it.
 ///
 /// If no custom handler is registered, the default handler will be returned.
-pub fn take_handler() -> Box<Fn(&DetourPanicInfo) + Sync + Send> {
+pub fn take_handler() -> Box<dyn Fn(&DetourPanicInfo) + Sync + Send> {
     HANDLER.take().unwrap_or_else(|| Box::new(default_handler))
 }
 
 #[doc(hidden)]
-pub fn __handle(path: &'static str, name: &'static str, payload: Box<Any + Send>) -> ! {
+pub fn __handle(path: &'static str, name: &'static str, payload: Box<dyn Any + Send>) -> ! {
     let payload = AssertUnwindSafe(payload);
 
     let _ = panic::catch_unwind(move || {
         let full_path = format!("{}::{}", path, name);
         let info = DetourPanicInfo {
             payload: &**payload,
-            detour: &full_path
+            detour: &full_path,
         };
 
         HANDLER.with(|handler| {
@@ -87,6 +86,10 @@ pub fn __handle(path: &'static str, name: &'static str, payload: Box<Any + Send>
 
 fn default_handler(info: &DetourPanicInfo) {
     let mut stderr = io::stderr();
-    let _ = writeln!(stderr, "The detour function for '{}' panicked. Aborting.", info.detour);
+    let _ = writeln!(
+        stderr,
+        "The detour function for '{}' panicked. Aborting.",
+        info.detour
+    );
     let _ = stderr.flush();
 }

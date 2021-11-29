@@ -6,9 +6,8 @@ environment:
   matrix:
   - TARGET: i686-pc-windows-msvc
   - TARGET: x86_64-pc-windows-msvc
-  #FIXME: msys2 32-bits mingw broken
-  #- TARGET: i686-pc-windows-gnu
-  #  MSYS2_BITS: 32
+  - TARGET: i686-pc-windows-gnu
+    MSYS2_BITS: 32
   - TARGET: x86_64-pc-windows-gnu
     MSYS2_BITS: 64
   HOST: x86_64-pc-windows-msvc
@@ -32,7 +31,7 @@ install:
   - rustc -vV
   - cargo -vV
 
-  #- cargo install clippy
+  - cargo install clippy
 
   - set CARGO_TARGET_DIR=target
 
@@ -40,7 +39,7 @@ build: off
 
 test_script:
   - cargo test --target %TARGET%
-  #- cargo clippy --target %TARGET%
+  - cargo clippy --target %TARGET%
 
 deploy_script:
   - if "%TARGET%" == "%HOST%" cargo doc --no-deps && travis-cargo doc-upload

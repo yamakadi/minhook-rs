@@ -1,7 +1,5 @@
 # minhook-rs
 
-[![Build status](https://ci.appveyor.com/api/projects/status/e7yg48n0835hy9b6?svg=true)](https://ci.appveyor.com/project/Jascha-N/minhook-rs)
-
 [Documentation](http://jascha-n.github.io/minhook-rs)
 
 A function hooking library for the Rust programming language. This library provides efficient and safe bindings to the
